@@ -1,7 +1,7 @@
 # screens/gestion_devoirs.py
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QDateEdit, QComboBox,
-    QLineEdit, QPushButton, QFrame, QLabel, QSpacerItem, QSizePolicy
+    QLineEdit, QPushButton, QFrame, QLabel, QSpacerItem, QSizePolicy, QScrollArea
 )
 from PySide6.QtCore import Qt, QDate, QTimer, QEvent
 from PySide6.QtGui import QColor, QFont, QPalette
@@ -84,15 +84,31 @@ class DevoirsWidget(QWidget):
         # Espacement avant la liste
         main_layout.addSpacing(20)
 
-        # Conteneur pour la liste des devoirs (avec scroll si besoin)
+        # Zone de scroll pour la liste des devoirs
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background-color: transparent;
+            }
+        """)
+
+        # Conteneur pour la liste des devoirs
         self.scroll_container = QWidget()
         self.scroll_layout = QVBoxLayout()
         self.scroll_layout.setSpacing(10)
         self.scroll_layout.setContentsMargins(0, 0, 0, 0)
+        self.scroll_layout.setAlignment(Qt.AlignTop)  # Aligner en haut
         self.scroll_container.setLayout(self.scroll_layout)
 
-        # Ajouter le conteneur à la fenêtre
-        main_layout.addWidget(self.scroll_container)
+        # Ajouter le conteneur dans la zone de scroll
+        scroll_area.setWidget(self.scroll_container)
+
+        # Ajouter la zone de scroll à la fenêtre
+        main_layout.addWidget(scroll_area)
 
         # Appliquer le layout principal
         self.setLayout(main_layout)
@@ -125,9 +141,11 @@ class DevoirsWidget(QWidget):
 
         # Vider la liste
         for i in reversed(range(self.scroll_layout.count())):
-            widget = self.scroll_layout.itemAt(i).widget()
-            if widget:
-                widget.deleteLater()
+            item = self.scroll_layout.itemAt(i)
+            if item.widget():
+                item.widget().deleteLater()
+            elif item.spacerItem():
+                self.scroll_layout.removeItem(item)
 
         # Ajouter chaque devoir comme une carte personnalisée
         for devoir in devoirs:
@@ -135,7 +153,7 @@ class DevoirsWidget(QWidget):
             self.scroll_layout.addWidget(card)
 
         # Ajouter un espaceur à la fin pour éviter que le dernier élément touche le bas
-        spacer = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         self.scroll_layout.addItem(spacer)
 
     def ajouter_devoir(self):

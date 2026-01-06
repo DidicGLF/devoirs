@@ -1,7 +1,7 @@
 # screens/gestion_classes.py
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QLineEdit, QPushButton, 
-    QFrame, QLabel, QSpacerItem, QSizePolicy, QColorDialog
+    QFrame, QLabel, QSpacerItem, QSizePolicy, QColorDialog, QScrollArea
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QIntValidator
@@ -100,15 +100,31 @@ class ClassesWidget(QWidget):
         # Espacement avant la liste
         main_layout.addSpacing(20)
 
+        # Zone de scroll pour la liste des classes
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background-color: transparent;
+            }
+        """)
+
         # Conteneur pour la liste des classes
         self.scroll_container = QWidget()
         self.scroll_layout = QVBoxLayout()
         self.scroll_layout.setSpacing(10)
         self.scroll_layout.setContentsMargins(0, 0, 0, 0)
+        self.scroll_layout.setAlignment(Qt.AlignTop)  # Aligner en haut
         self.scroll_container.setLayout(self.scroll_layout)
 
-        # Ajouter le conteneur à la fenêtre
-        main_layout.addWidget(self.scroll_container)
+        # Ajouter le conteneur dans la zone de scroll
+        scroll_area.setWidget(self.scroll_container)
+
+        # Ajouter la zone de scroll à la fenêtre
+        main_layout.addWidget(scroll_area)
 
         # Appliquer le layout principal
         self.setLayout(main_layout)
@@ -144,9 +160,11 @@ class ClassesWidget(QWidget):
 
         # Vider la liste
         for i in reversed(range(self.scroll_layout.count())):
-            widget = self.scroll_layout.itemAt(i).widget()
-            if widget:
-                widget.deleteLater()
+            item = self.scroll_layout.itemAt(i)
+            if item.widget():
+                item.widget().deleteLater()
+            elif item.spacerItem():
+                self.scroll_layout.removeItem(item)
 
         # Ajouter chaque classe comme une carte personnalisée
         for classe in classes:
@@ -154,7 +172,7 @@ class ClassesWidget(QWidget):
             self.scroll_layout.addWidget(card)
 
         # Ajouter un espaceur à la fin
-        spacer = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         self.scroll_layout.addItem(spacer)
 
     def ajouter_classe(self):
