@@ -12,7 +12,8 @@ import os
 # Ajouter le dossier parent au chemin pour importer utils/gestion.py
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from utils.gestion import charger_classes, charger_devoirs  # Import des fonctions
+from utils.gestion import charger_classes, charger_devoirs, sauvegarder_devoirs
+from models.Devoir import Devoir
 
 class DevoirsWidget(QWidget):
     """Écran de gestion des devoirs — partie saisie + liste des devoirs (design personnalisé)"""
@@ -102,8 +103,8 @@ class DevoirsWidget(QWidget):
         # Charger les devoirs depuis utils/gestion.py
         self.charger_devoirs_from_utils()
 
-        # Connexion du bouton (à implémenter plus tard)
-        # self.btn_ajouter.clicked.connect(self.ajouter_devoir)
+        # Connexion du bouton
+        self.btn_ajouter.clicked.connect(self.ajouter_devoir)
 
     def charger_classes_from_utils(self):
         """Charge les classes depuis utils/gestion.py et les ajoute au QComboBox"""
@@ -138,14 +139,58 @@ class DevoirsWidget(QWidget):
         self.scroll_layout.addItem(spacer)
 
     def ajouter_devoir(self):
-        """À implémenter — ajoute un devoir à la liste et au tableau"""
-        pass
+        """Ajoute un devoir à la liste et sauvegarde"""
+        contenu = self.line_content.text().strip()
+        
+        if not contenu or self.combo_classe.currentIndex() == -1:
+            return  # Ne rien faire si le contenu est vide ou aucune classe sélectionnée
+        
+        # Récupérer la classe sélectionnée
+        classe_index = self.combo_classe.currentIndex()
+        classe_objet = self.classes_list[classe_index]
+        
+        # Récupérer la date (format YYYY-MM-DD pour correspondre au model)
+        date = self.date_edit.date().toString("yyyy-MM-dd")
+        
+        # Récupérer le statut
+        statut = self.combo_statut.currentText()
+        
+        # Créer une nouvelle instance de Devoir
+        nouveau_devoir = Devoir(
+            contenu=contenu,
+            classe_objet=classe_objet,
+            date=date,
+            statut=statut
+        )
+        
+        # Ajouter à la liste
+        self.devoirs_list.append(nouveau_devoir)
+        
+        # Sauvegarder dans le fichier JSON
+        sauvegarder_devoirs(self.devoirs_list)
+        
+        # Recharger l'affichage
+        self.charger_devoirs_from_utils()
+        
+        # Réinitialiser les champs
+        self.line_content.clear()
+        self.date_edit.setDate(QDate.currentDate())
+        self.combo_statut.setCurrentIndex(0)
+
+    def supprimer_devoir(self, devoir):
+        """Supprime un devoir de la liste et sauvegarde"""
+        if devoir in self.devoirs_list:
+            self.devoirs_list.remove(devoir)
+            sauvegarder_devoirs(self.devoirs_list)
+            self.charger_devoirs_from_utils()
+
 
 class DevoirCard(QFrame):
     """Widget personnalisé pour afficher un devoir sous forme de carte"""
-    def __init__(self, devoir, parent=None):
-        super().__init__(parent)
+    def __init__(self, devoir, parent_widget=None):
+        super().__init__()
         self.devoir = devoir
+        self.parent_widget = parent_widget
         self.init_ui()
 
     def init_ui(self):
@@ -210,7 +255,7 @@ class DevoirCard(QFrame):
         # Statut (avec couleur)
         label_statut = QLabel(self.devoir.statut)
         label_statut.setObjectName("statut")
-        if self.devoir.statut == "Fait":
+        if self.devoir.statut == "Terminé" or self.devoir.statut == "Fait":
             label_statut.setStyleSheet("font-weight: bold; padding: 5px 10px; border-radius: 5px; background-color: #28a745; color: white;")
         elif self.devoir.statut == "En cours":
             label_statut.setStyleSheet("font-weight: bold; padding: 5px 10px; border-radius: 5px; background-color: #ffc107; color: #333;")
@@ -218,6 +263,27 @@ class DevoirCard(QFrame):
             label_statut.setStyleSheet("font-weight: bold; padding: 5px 10px; border-radius: 5px; background-color: #dc3545; color: white;")
 
         top_layout.addWidget(label_statut)
+
+        # Bouton supprimer (optionnel, comme dans les classes)
+        btn_supprimer = QPushButton("🗑️")
+        btn_supprimer.setFixedSize(35, 35)
+        btn_supprimer.setStyleSheet("""
+            QPushButton {
+                background-color: #dc3545;
+                color: white;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #c82333;
+            }
+            QPushButton:pressed {
+                background-color: #bd2130;
+            }
+        """)
+        btn_supprimer.clicked.connect(self.supprimer)
+        top_layout.addWidget(btn_supprimer)
 
         layout.addLayout(top_layout)
 
@@ -242,8 +308,11 @@ class DevoirCard(QFrame):
             "blanc": "#FFFFFF",
         }
 
-        # Stocker la couleur CSS comme attribut d'instance → pour l'utiliser dans eventFilter
-        self.color_css = color_map.get(couleur_classe.lower(), "#808080")  # gris par défaut
+        # Si la couleur est déjà en format hex, on la garde
+        if couleur_classe.startswith('#'):
+            self.color_css = couleur_classe
+        else:
+            self.color_css = color_map.get(couleur_classe.lower(), "#808080")
 
         # Appliquer la couleur
         self.line_color.setStyleSheet(f"background-color: {self.color_css};")
@@ -256,6 +325,11 @@ class DevoirCard(QFrame):
         # Effet hover (optionnel)
         self.setMouseTracking(True)
         self.installEventFilter(self)
+
+    def supprimer(self):
+        """Supprime ce devoir"""
+        if self.parent_widget:
+            self.parent_widget.supprimer_devoir(self.devoir)
 
     def eventFilter(self, obj, event):
         if obj == self:
@@ -325,6 +399,6 @@ class DevoirCard(QFrame):
                         background-color: #dc3545;
                     }
                 """)
-                # Réappliquer la couleur de la classe à la ligne → ⚠️ C'EST ICI LE CHANGEMENT
+                # Réappliquer la couleur de la classe à la ligne
                 self.line_color.setStyleSheet(f"background-color: {self.color_css};")
         return super().eventFilter(obj, event)
