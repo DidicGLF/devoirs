@@ -1,7 +1,7 @@
 # screens/gestion_devoirs.py
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QDateEdit, QComboBox,
-    QLineEdit, QPushButton, QFrame, QLabel, QSpacerItem, QSizePolicy, QScrollArea
+    QLineEdit, QPushButton, QFrame, QLabel, QSpacerItem, QSizePolicy, QScrollArea, QCheckBox
 )
 from PySide6.QtCore import Qt, QDate, QTimer, QEvent
 from PySide6.QtGui import QColor, QFont, QPalette
@@ -46,13 +46,7 @@ class DevoirsWidget(QWidget):
         self.date_edit.setFixedWidth(120)
         input_layout.addWidget(self.date_edit)
 
-        # 3. Statut (ComboBox)
-        self.combo_statut = QComboBox()
-        self.combo_statut.addItems(["À faire", "En cours", "Terminé"])
-        self.combo_statut.setFixedWidth(120)
-        input_layout.addWidget(self.combo_statut)
-
-        # 4. Contenu (QLineEdit)
+        # 3. Contenu (QLineEdit)
         self.line_content = QLineEdit()
         self.line_content.setPlaceholderText("Description du devoir...")
         self.line_content.setFixedHeight(30)
@@ -170,8 +164,8 @@ class DevoirsWidget(QWidget):
         # Récupérer la date (format YYYY-MM-DD pour correspondre au model)
         date = self.date_edit.date().toString("yyyy-MM-dd")
         
-        # Récupérer le statut
-        statut = self.combo_statut.currentText()
+        # Statut par défaut : "À faire"
+        statut = "À faire"
         
         # Créer une nouvelle instance de Devoir
         nouveau_devoir = Devoir(
@@ -193,7 +187,6 @@ class DevoirsWidget(QWidget):
         # Réinitialiser les champs
         self.line_content.clear()
         self.date_edit.setDate(QDate.currentDate())
-        self.combo_statut.setCurrentIndex(0)
 
     def supprimer_devoir(self, devoir):
         """Supprime un devoir de la liste et sauvegarde"""
@@ -254,6 +247,30 @@ class DevoirCard(QFrame):
         top_layout.setSpacing(10)
         top_layout.setContentsMargins(5, 5, 5, 5)
 
+        # Case à cocher
+        self.checkbox = QCheckBox()
+        self.checkbox.setFixedSize(30, 30)
+        self.checkbox.setStyleSheet("""
+            QCheckBox::indicator {
+                width: 25px;
+                height: 25px;
+                border-radius: 5px;
+                border: 2px solid #4A90E2;
+            }
+            QCheckBox::indicator:unchecked {
+                background-color: white;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #28a745;
+                border-color: #28a745;
+            }
+        """)
+        # Cocher la case si le statut est "Fait" ou "Terminé"
+        if self.devoir.statut in ["Fait", "Terminé"]:
+            self.checkbox.setChecked(True)
+        self.checkbox.stateChanged.connect(self.changer_statut)
+        top_layout.addWidget(self.checkbox)
+
         # Classe
         label_classe = QLabel(f"📚 {self.devoir.classe_objet.nom}")
         label_classe.setStyleSheet("font-weight: bold; font-size: 14px;")
@@ -271,16 +288,16 @@ class DevoirCard(QFrame):
         top_layout.addWidget(label_contenu, 1)  # 1 = stretch
 
         # Statut (avec couleur)
-        label_statut = QLabel(self.devoir.statut)
-        label_statut.setObjectName("statut")
+        self.label_statut = QLabel(self.devoir.statut)
+        self.label_statut.setObjectName("statut")
         if self.devoir.statut == "Terminé" or self.devoir.statut == "Fait":
-            label_statut.setStyleSheet("font-weight: bold; padding: 5px 10px; border-radius: 5px; background-color: #28a745; color: white;")
+            self.label_statut.setStyleSheet("font-weight: bold; padding: 5px 10px; border-radius: 5px; background-color: #28a745; color: white;")
         elif self.devoir.statut == "En cours":
-            label_statut.setStyleSheet("font-weight: bold; padding: 5px 10px; border-radius: 5px; background-color: #ffc107; color: #333;")
+            self.label_statut.setStyleSheet("font-weight: bold; padding: 5px 10px; border-radius: 5px; background-color: #ffc107; color: #333;")
         else:  # À faire
-            label_statut.setStyleSheet("font-weight: bold; padding: 5px 10px; border-radius: 5px; background-color: #dc3545; color: white;")
+            self.label_statut.setStyleSheet("font-weight: bold; padding: 5px 10px; border-radius: 5px; background-color: #dc3545; color: white;")
 
-        top_layout.addWidget(label_statut)
+        top_layout.addWidget(self.label_statut)
 
         # Bouton supprimer (optionnel, comme dans les classes)
         btn_supprimer = QPushButton("🗑️")
@@ -348,6 +365,30 @@ class DevoirCard(QFrame):
         """Supprime ce devoir"""
         if self.parent_widget:
             self.parent_widget.supprimer_devoir(self.devoir)
+
+    def changer_statut(self, state):
+        """Change le statut du devoir en fonction de l'état de la case à cocher"""
+        # state est un entier: 0 = Unchecked, 2 = Checked
+        if state == 2:  # Checked
+            self.devoir.statut = "Fait"
+        else:  # Unchecked (0)
+            self.devoir.statut = "À faire"
+        
+        # Mettre à jour l'affichage du statut
+        self.mettre_a_jour_affichage_statut()
+        
+        # Sauvegarder les modifications
+        if self.parent_widget:
+            sauvegarder_devoirs(self.parent_widget.devoirs_list)
+
+    def mettre_a_jour_affichage_statut(self):
+        """Met à jour l'affichage du label de statut"""
+        self.label_statut.setText(self.devoir.statut)
+        # Mettre à jour la couleur
+        if self.devoir.statut == "Fait":
+            self.label_statut.setStyleSheet("font-weight: bold; padding: 5px 10px; border-radius: 5px; background-color: #28a745; color: white;")
+        else:  # À faire
+            self.label_statut.setStyleSheet("font-weight: bold; padding: 5px 10px; border-radius: 5px; background-color: #dc3545; color: white;")
 
     def eventFilter(self, obj, event):
         if obj == self:
