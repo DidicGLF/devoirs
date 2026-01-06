@@ -292,21 +292,21 @@ class ClasseCard(QFrame):
         top_layout.addStretch()
 
         # Bouton supprimer
-        btn_supprimer = QPushButton("🗑️ Supprimer")
-        btn_supprimer.setFixedSize(120, 35)
+        btn_supprimer = QPushButton("🗑️")
+        btn_supprimer.setFixedSize(35, 35)
         btn_supprimer.setStyleSheet("""
             QPushButton {
-                background-color: #dc3545;
-                color: white;
+                background-color: white;
+                color: #dc3545;
+                border: 2px solid #dc3545;
                 border-radius: 8px;
-                font-size: 12px;
-                font-weight: bold;
+                font-size: 14px;
             }
             QPushButton:hover {
-                background-color: #c82333;
+                background-color: #ffe6e6;
             }
             QPushButton:pressed {
-                background-color: #bd2130;
+                background-color: #ffcccc;
             }
         """)
         btn_supprimer.clicked.connect(self.supprimer)

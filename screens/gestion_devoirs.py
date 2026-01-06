@@ -1,7 +1,7 @@
 # screens/gestion_devoirs.py
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QDateEdit, QComboBox,
-    QLineEdit, QPushButton, QFrame, QLabel, QSpacerItem, QSizePolicy, QScrollArea, QCheckBox
+    QLineEdit, QPushButton, QFrame, QLabel, QSpacerItem, QSizePolicy, QScrollArea, QCheckBox, QApplication
 )
 from PySide6.QtCore import Qt, QDate, QTimer, QEvent
 from PySide6.QtGui import QColor, QFont, QPalette
@@ -282,10 +282,19 @@ class DevoirCard(QFrame):
         top_layout.addWidget(label_date)
 
         # Contenu (flexible)
-        label_contenu = QLabel(self.devoir.contenu)
-        label_contenu.setWordWrap(True)
-        label_contenu.setStyleSheet("font-size: 14px; color: #333;")
-        top_layout.addWidget(label_contenu, 1)  # 1 = stretch
+        self.label_contenu = QLabel(self.devoir.contenu)
+        self.label_contenu.setWordWrap(True)
+        self.label_contenu.setStyleSheet("font-size: 14px; color: #333; cursor: pointer;")
+        self.label_contenu.mousePressEvent = self.activer_edition_contenu
+        top_layout.addWidget(self.label_contenu, 1)  # 1 = stretch
+        
+        # Champ d'édition (caché par défaut)
+        self.line_edit_contenu = QLineEdit(self.devoir.contenu)
+        self.line_edit_contenu.setStyleSheet("font-size: 14px; color: #333;")
+        self.line_edit_contenu.hide()
+        self.line_edit_contenu.returnPressed.connect(self.sauvegarder_contenu)
+        self.line_edit_contenu.editingFinished.connect(self.sauvegarder_contenu)
+        top_layout.addWidget(self.line_edit_contenu, 1)
 
         # Statut (avec couleur)
         self.label_statut = QLabel(self.devoir.statut)
@@ -304,17 +313,18 @@ class DevoirCard(QFrame):
         btn_supprimer.setFixedSize(35, 35)
         btn_supprimer.setStyleSheet("""
             QPushButton {
-                background-color: #dc3545;
-                color: white;
+                background-color: white;
+                color: #dc3545;
+                border: 2px solid #dc3545;
                 border-radius: 8px;
                 font-size: 14px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #c82333;
+                background-color: #ffe6e6;
             }
             QPushButton:pressed {
-                background-color: #bd2130;
+                background-color: #ffcccc;
             }
         """)
         btn_supprimer.clicked.connect(self.supprimer)
@@ -381,6 +391,50 @@ class DevoirCard(QFrame):
         if self.parent_widget:
             sauvegarder_devoirs(self.parent_widget.devoirs_list)
 
+    def activer_edition_contenu(self, event):
+        """Active le mode édition du contenu"""
+        self.label_contenu.hide()
+        self.line_edit_contenu.setText(self.devoir.contenu)
+        self.line_edit_contenu.show()
+        self.line_edit_contenu.setFocus()
+        self.line_edit_contenu.selectAll()
+
+    def copier_contenu(self):
+        """Copie le contenu du devoir dans le presse-papier"""
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.devoir.contenu)
+        
+        # Indication visuelle temporaire (optionnel)
+        original_style = self.styleSheet()
+        self.setStyleSheet("""
+            QFrame {
+                background-color: #e3f2fd;
+                border-radius: 10px;
+                border: 2px solid #2196F3;
+                padding: 10px;
+                margin: 5px;
+            }
+        """)
+        
+        # Retour au style normal après 200ms
+        QTimer.singleShot(200, lambda: self.setStyleSheet(original_style))
+
+    def sauvegarder_contenu(self):
+        """Sauvegarde le contenu modifié"""
+        nouveau_contenu = self.line_edit_contenu.text().strip()
+        
+        if nouveau_contenu:  # Ne pas accepter un contenu vide
+            self.devoir.contenu = nouveau_contenu
+            self.label_contenu.setText(nouveau_contenu)
+            
+            # Sauvegarder dans le fichier JSON
+            if self.parent_widget:
+                sauvegarder_devoirs(self.parent_widget.devoirs_list)
+        
+        # Retour à l'affichage normal
+        self.line_edit_contenu.hide()
+        self.label_contenu.show()
+
     def mettre_a_jour_affichage_statut(self):
         """Met à jour l'affichage du label de statut"""
         self.label_statut.setText(self.devoir.statut)
@@ -392,7 +446,14 @@ class DevoirCard(QFrame):
 
     def eventFilter(self, obj, event):
         if obj == self:
-            if event.type() == QEvent.Enter:
+            if event.type() == QEvent.MouseButtonPress:
+                # Vérifier que le clic n'est pas sur un widget interactif
+                widget_under_mouse = QApplication.widgetAt(event.globalPosition().toPoint())
+                if widget_under_mouse not in [self.checkbox, self.label_contenu, self.line_edit_contenu]:
+                    # Ne pas copier si on clique sur le bouton supprimer ou le label de statut
+                    if not isinstance(widget_under_mouse, QPushButton):
+                        self.copier_contenu()
+            elif event.type() == QEvent.Enter:
                 # Style au survol : bordure plus foncée
                 self.setStyleSheet("""
                     QFrame {
