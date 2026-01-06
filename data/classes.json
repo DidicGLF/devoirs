@@ -1,17 +1,27 @@
 [
-    {
-        "nom": "5e A",
-        "effectif": 25,
-        "couleur": "bleu"
-    },
-    {
-        "nom": "5e B",
-        "effectif": 23,
-        "couleur": "vert"
-    },
-    {
-        "nom": "6e A",
-        "effectif": 28,
-        "couleur": "rouge"
-    }
+  {
+    "nom": "5e A",
+    "effectif": 25,
+    "couleur": "bleu"
+  },
+  {
+    "nom": "5e B",
+    "effectif": 23,
+    "couleur": "vert"
+  },
+  {
+    "nom": "6e A",
+    "effectif": 28,
+    "couleur": "rouge"
+  },
+  {
+    "nom": "4e A",
+    "effectif": 23,
+    "couleur": "#f9f06b"
+  },
+  {
+    "nom": "3e b",
+    "effectif": 23,
+    "couleur": "#dc8add"
+  }
 ]

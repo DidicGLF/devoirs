@@ -221,7 +221,7 @@ class DevoirCard(QFrame):
 
         layout.addLayout(top_layout)
 
-        # Ligne 2 : Ligne colorée en dessous (ex: pour indiquer l'état)
+        # Ligne 2 : Ligne colorée en dessous (ex: pour indiquer la couleur de la classe)
         self.line_color = QFrame()
         self.line_color.setFixedHeight(5)  # hauteur de la ligne
 
@@ -229,8 +229,6 @@ class DevoirCard(QFrame):
         couleur_classe = self.devoir.classe_objet.couleur
 
         # Convertir la couleur en format CSS
-        # Si la couleur est un nom (ex: "bleu", "rouge"), on peut utiliser un dictionnaire
-        # Si c'est un code hexa (ex: "#0000FF"), on l'utilise directement
         color_map = {
             "gris": "#808080",
             "bleu": "#0000FF",
@@ -244,10 +242,11 @@ class DevoirCard(QFrame):
             "blanc": "#FFFFFF",
         }
 
-        color_css = color_map.get(couleur_classe.lower(), "#808080")  # gris par défaut
+        # Stocker la couleur CSS comme attribut d'instance → pour l'utiliser dans eventFilter
+        self.color_css = color_map.get(couleur_classe.lower(), "#808080")  # gris par défaut
 
         # Appliquer la couleur
-        self.line_color.setStyleSheet(f"background-color: {color_css};")
+        self.line_color.setStyleSheet(f"background-color: {self.color_css};")
 
         layout.addWidget(self.line_color)
 
@@ -261,14 +260,14 @@ class DevoirCard(QFrame):
     def eventFilter(self, obj, event):
         if obj == self:
             if event.type() == QEvent.Enter:
+                # Style au survol : bordure plus foncée
                 self.setStyleSheet("""
                     QFrame {
                         background-color: #f8f9fa;
                         border-radius: 10px;
-                        border: 1px solid #ddd;
+                        border: 1px solid #999;
                         padding: 10px;
                         margin: 5px;
-                        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
                     }
                     QLabel {
                         font-size: 14px;
@@ -292,14 +291,10 @@ class DevoirCard(QFrame):
                         background-color: #dc3545;
                     }
                 """)
-                self.line_color.setStyleSheet("background-color: #ddd;")  # réinitialiser la couleur de la ligne au hover
-                if self.devoir.est_en_retard():
-                    self.line_color.setStyleSheet("background-color: #dc3545;")
-                elif self.devoir.statut == "Fait":
-                    self.line_color.setStyleSheet("background-color: #28a745;")
-                elif self.devoir.statut == "En cours":
-                    self.line_color.setStyleSheet("background-color: #ffc107;")
+                # Réappliquer la couleur de la classe à la ligne
+                self.line_color.setStyleSheet(f"background-color: {self.color_css};")
             elif event.type() == QEvent.Leave:
+                # Style normal
                 self.setStyleSheet("""
                     QFrame {
                         background-color: white;
@@ -330,11 +325,6 @@ class DevoirCard(QFrame):
                         background-color: #dc3545;
                     }
                 """)
-                self.line_color.setStyleSheet("background-color: #ddd;")
-                if self.devoir.est_en_retard():
-                    self.line_color.setStyleSheet("background-color: #dc3545;")
-                elif self.devoir.statut == "Fait":
-                    self.line_color.setStyleSheet("background-color: #28a745;")
-                elif self.devoir.statut == "En cours":
-                    self.line_color.setStyleSheet("background-color: #ffc107;")
+                # Réappliquer la couleur de la classe à la ligne → ⚠️ C'EST ICI LE CHANGEMENT
+                self.line_color.setStyleSheet(f"background-color: {self.color_css};")
         return super().eventFilter(obj, event)
