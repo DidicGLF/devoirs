@@ -207,7 +207,7 @@ class AccueilWindow(QMainWindow):
         if self.page_parametres is None and gestion_parametres:
             try:
                 if hasattr(gestion_parametres, 'ParametresWidget'):
-                    content = gestion_parametres.ParametresWidget()
+                    content = gestion_parametres.ParametresWidget(main_window=self)
                     self.page_parametres = self.create_page_with_back_button(
                         content, "Gestion des Paramètres"
                     )

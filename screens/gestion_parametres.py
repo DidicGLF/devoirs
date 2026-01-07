@@ -19,8 +19,9 @@ from utils.gestion import charger_classes, charger_devoirs, sauvegarder_classes,
 
 class ParametresWidget(QWidget):
     """Écran de gestion des paramètres"""
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, main_window=None):
         super().__init__(parent)
+        self.main_window = main_window  # Référence à AccueilWindow
         self.init_ui()
 
     def init_ui(self):
@@ -310,8 +311,11 @@ class ParametresWidget(QWidget):
             QMessageBox.information(
                 self,
                 "Import réussi",
-                f"Les données ont été importées avec succès !\n\nUne sauvegarde des anciennes données a été créée dans :\n{backup_dir}\n\n⚠️ Veuillez naviguer vers une autre page puis revenir pour voir les nouvelles données."
+                f"Les données ont été importées avec succès !\n\nUne sauvegarde des anciennes données a été créée dans :\n{backup_dir}"
             )
+            
+            # Rafraîchir les pages si possible
+            self.rafraichir_pages()
         
         except Exception as e:
             QMessageBox.critical(
@@ -366,6 +370,9 @@ class ParametresWidget(QWidget):
                 "Réinitialisation réussie",
                 f"Toutes les données ont été supprimées.\n\nUne sauvegarde a été créée dans :\n{backup_dir}"
             )
+            
+            # Rafraîchir les pages si possible
+            self.rafraichir_pages()
         
         except Exception as e:
             QMessageBox.critical(
@@ -373,3 +380,25 @@ class ParametresWidget(QWidget):
                 "Erreur",
                 f"Une erreur est survenue :\n{str(e)}"
             )
+
+    def rafraichir_pages(self):
+        """Rafraîchit toutes les pages pour recharger les données"""
+        if self.main_window:
+            # Recharger la page des classes si elle existe
+            if hasattr(self.main_window, 'page_classes') and self.main_window.page_classes:
+                # Récupérer le widget ClassesWidget
+                for i in range(self.main_window.page_classes.layout().count()):
+                    widget = self.main_window.page_classes.layout().itemAt(i).widget()
+                    if widget and hasattr(widget, 'charger_classes_from_utils'):
+                        widget.charger_classes_from_utils()
+                        break
+            
+            # Recharger la page des devoirs si elle existe
+            if hasattr(self.main_window, 'page_devoirs') and self.main_window.page_devoirs:
+                # Récupérer le widget DevoirsWidget
+                for i in range(self.main_window.page_devoirs.layout().count()):
+                    widget = self.main_window.page_devoirs.layout().itemAt(i).widget()
+                    if widget and hasattr(widget, 'charger_devoirs_from_utils'):
+                        widget.charger_devoirs_from_utils()
+                        widget.charger_classes_from_utils()
+                        break
