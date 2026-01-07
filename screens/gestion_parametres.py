@@ -1,7 +1,7 @@
 # screens/gestion_parametres.py
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, 
-    QFrame, QFileDialog, QMessageBox, QSpacerItem, QSizePolicy
+    QFrame, QFileDialog, QMessageBox, QSpacerItem, QSizePolicy, QScrollArea
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
@@ -27,8 +27,27 @@ class ParametresWidget(QWidget):
     def init_ui(self):
         # Layout principal
         main_layout = QVBoxLayout()
-        main_layout.setSpacing(20)
-        main_layout.setContentsMargins(50, 20, 50, 50)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Zone de scroll
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background-color: transparent;
+            }
+        """)
+
+        # Widget conteneur pour le contenu scrollable
+        scroll_widget = QWidget()
+        scroll_layout = QVBoxLayout()
+        scroll_layout.setSpacing(20)
+        scroll_layout.setContentsMargins(50, 20, 50, 50)
+        scroll_layout.setAlignment(Qt.AlignTop)
 
         # ==================== SECTION DONNÉES ====================
         section_donnees = self.creer_section("📊 Données", [
@@ -36,29 +55,36 @@ class ParametresWidget(QWidget):
             ("Importer des données", "Importer des classes et devoirs depuis un fichier JSON", self.importer_donnees),
             ("Réinitialiser les données", "Supprimer toutes les classes et devoirs (irréversible)", self.reinitialiser_donnees)
         ])
-        main_layout.addWidget(section_donnees)
+        scroll_layout.addWidget(section_donnees)
 
         # ==================== SECTION APPARENCE ====================
         section_apparence = self.creer_section("🎨 Apparence", [
             ("Thème", "Choisir entre thème clair et sombre (prochainement)", None),
             ("Taille de police", "Ajuster la taille du texte (prochainement)", None)
         ])
-        main_layout.addWidget(section_apparence)
+        scroll_layout.addWidget(section_apparence)
 
         # ==================== SECTION PRÉFÉRENCES ====================
         section_preferences = self.creer_section("⚙️ Préférences", [
-            ("Classe par défaut", "Définir une classe par défaut au démarrage (prochainement)", None),
-            ("Confirmation de suppression", "Demander confirmation avant de supprimer (prochainement)", None),
             ("Format de date", "Choisir le format d'affichage des dates (prochainement)", None)
         ])
-        main_layout.addWidget(section_preferences)
+        scroll_layout.addWidget(section_preferences)
 
         # ==================== SECTION À PROPOS ====================
         section_apropos = self.creer_section_apropos()
-        main_layout.addWidget(section_apropos)
+        scroll_layout.addWidget(section_apropos)
 
         # Espaceur en bas
-        main_layout.addStretch()
+        scroll_layout.addStretch()
+
+        # Appliquer le layout au widget scrollable
+        scroll_widget.setLayout(scroll_layout)
+        
+        # Ajouter le widget dans la zone de scroll
+        scroll_area.setWidget(scroll_widget)
+        
+        # Ajouter la zone de scroll au layout principal
+        main_layout.addWidget(scroll_area)
 
         self.setLayout(main_layout)
 
