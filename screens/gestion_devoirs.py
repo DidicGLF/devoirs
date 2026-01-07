@@ -284,7 +284,8 @@ class DevoirCard(QFrame):
         # Contenu (flexible)
         self.label_contenu = QLabel(self.devoir.contenu)
         self.label_contenu.setWordWrap(True)
-        self.label_contenu.setStyleSheet("font-size: 14px; color: #333; cursor: pointer;")
+        self.label_contenu.setStyleSheet("font-size: 14px; color: #333;")
+        self.label_contenu.setCursor(Qt.PointingHandCursor)  # Curseur en main
         self.label_contenu.mousePressEvent = self.activer_edition_contenu
         top_layout.addWidget(self.label_contenu, 1)  # 1 = stretch
         
