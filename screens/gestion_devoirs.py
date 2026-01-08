@@ -3,8 +3,8 @@ from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QDateEdit, QComboBox,
     QLineEdit, QPushButton, QFrame, QLabel, QSpacerItem, QSizePolicy, QScrollArea, QCheckBox, QApplication
 )
-from PySide6.QtCore import Qt, QDate, QTimer, QEvent
-from PySide6.QtGui import QColor, QFont, QPalette
+from PySide6.QtCore import Qt, QDate, QTimer, QEvent, QMimeData, QPoint
+from PySide6.QtGui import QColor, QFont, QPalette, QDrag
 
 import sys
 import os
@@ -202,6 +202,8 @@ class DevoirCard(QFrame):
         super().__init__()
         self.devoir = devoir
         self.parent_widget = parent_widget
+        self.setAcceptDrops(True)
+        self.drag_start_position = None
         self.init_ui()
 
     def init_ui(self):
@@ -277,7 +279,16 @@ class DevoirCard(QFrame):
         top_layout.addWidget(label_classe)
 
         # Date
-        label_date = QLabel(f"📅 {self.devoir.date}")
+        # Convertir la date de YYYY-MM-DD en DD-MM-YYYY pour l'affichage
+        date_affichage = self.devoir.date
+        try:
+            from datetime import datetime
+            date_obj = datetime.strptime(self.devoir.date, "%Y-%m-%d")
+            date_affichage = date_obj.strftime("%d-%m-%Y")
+        except:
+            pass  # Si la conversion échoue, on garde le format original
+        
+        label_date = QLabel(f"📅 {date_affichage}")
         label_date.setStyleSheet("font-size: 13px; color: #666;")
         top_layout.addWidget(label_date)
 
@@ -372,6 +383,74 @@ class DevoirCard(QFrame):
         self.setMouseTracking(True)
         self.installEventFilter(self)
 
+    def mousePressEvent(self, event):
+        """Démarre le drag & drop"""
+        if event.button() == Qt.LeftButton:
+            # Vérifier que le clic n'est pas sur un widget interactif
+            widget_under_mouse = QApplication.widgetAt(event.globalPosition().toPoint())
+            if widget_under_mouse in [self.checkbox, self.label_contenu, self.line_edit_contenu]:
+                super().mousePressEvent(event)
+                return
+            if isinstance(widget_under_mouse, QPushButton):
+                super().mousePressEvent(event)
+                return
+                
+            self.drag_start_position = event.pos()
+            self.setCursor(Qt.ClosedHandCursor)
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        """Gère le déplacement pendant le drag"""
+        if not (event.buttons() & Qt.LeftButton):
+            return
+        if self.drag_start_position is None:
+            return
+        if (event.pos() - self.drag_start_position).manhattanLength() < QApplication.startDragDistance():
+            return
+
+        # Créer le drag
+        drag = QDrag(self)
+        mime_data = QMimeData()
+        
+        # Stocker l'index de cette carte
+        index = self.parent_widget.devoirs_list.index(self.devoir)
+        mime_data.setText(str(index))
+        drag.setMimeData(mime_data)
+
+        # Effet visuel pendant le drag
+        drag.exec(Qt.MoveAction)
+        self.setCursor(Qt.OpenHandCursor)
+
+    def mouseReleaseEvent(self, event):
+        """Fin du drag"""
+        self.drag_start_position = None
+        self.setCursor(Qt.OpenHandCursor)
+        super().mouseReleaseEvent(event)
+
+    def dragEnterEvent(self, event):
+        """Accepte le drag d'une autre carte"""
+        if event.mimeData().hasText():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        """Gère le drop sur cette carte"""
+        if event.mimeData().hasText():
+            source_index = int(event.mimeData().text())
+            target_index = self.parent_widget.devoirs_list.index(self.devoir)
+            
+            if source_index != target_index:
+                # Réorganiser la liste
+                devoir_deplace = self.parent_widget.devoirs_list.pop(source_index)
+                self.parent_widget.devoirs_list.insert(target_index, devoir_deplace)
+                
+                # Sauvegarder
+                sauvegarder_devoirs(self.parent_widget.devoirs_list)
+                
+                # Recharger l'affichage
+                self.parent_widget.charger_devoirs_from_utils()
+            
+            event.acceptProposedAction()
+
     def supprimer(self):
         """Supprime ce devoir"""
         if self.parent_widget:
@@ -448,10 +527,9 @@ class DevoirCard(QFrame):
     def eventFilter(self, obj, event):
         if obj == self:
             if event.type() == QEvent.MouseButtonPress:
-                # Vérifier que le clic n'est pas sur un widget interactif
+                # Copier le contenu quand on clique sur la carte
                 widget_under_mouse = QApplication.widgetAt(event.globalPosition().toPoint())
                 if widget_under_mouse not in [self.checkbox, self.label_contenu, self.line_edit_contenu]:
-                    # Ne pas copier si on clique sur le bouton supprimer ou le label de statut
                     if not isinstance(widget_under_mouse, QPushButton):
                         self.copier_contenu()
             elif event.type() == QEvent.Enter:
