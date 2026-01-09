@@ -17,10 +17,11 @@ from models.Classe import Classe
 
 class ClassesWidget(QWidget):
     """Écran de gestion des classes — partie saisie + liste des classes"""
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, main_window=None):
         super().__init__(parent)
+        self.main_window = main_window  # Référence à AccueilWindow
         self.classes_list = []  # Stockage des instances de Classe
-        self.couleur_selectionnee = "#808080"  # Couleur par défaut (gris)
+        self.couleur_selectionnee = "#808080" # Couleur par défaut (gris)
         self.init_ui()
 
     def init_ui(self):
@@ -197,6 +198,9 @@ class ClassesWidget(QWidget):
         # Recharger l'affichage
         self.charger_classes_from_utils()
         
+        # Rafraîchir la page des devoirs si elle existe
+        self.rafraichir_page_devoirs()
+        
         # Réinitialiser les champs
         self.line_nom.clear()
         self.line_effectif.clear()
@@ -221,6 +225,21 @@ class ClassesWidget(QWidget):
             self.classes_list.remove(classe)
             sauvegarder_classes(self.classes_list)
             self.charger_classes_from_utils()
+            
+            # Rafraîchir la page des devoirs si elle existe
+            self.rafraichir_page_devoirs()
+
+    def rafraichir_page_devoirs(self):
+        """Rafraîchit la liste des classes dans la page des devoirs"""
+        if self.main_window:
+            # Recharger la page des devoirs si elle existe
+            if hasattr(self.main_window, 'page_devoirs') and self.main_window.page_devoirs:
+                # Récupérer le widget DevoirsWidget
+                for i in range(self.main_window.page_devoirs.layout().count()):
+                    widget = self.main_window.page_devoirs.layout().itemAt(i).widget()
+                    if widget and hasattr(widget, 'charger_classes_from_utils'):
+                        widget.charger_classes_from_utils()
+                        break
 
 
 class ClasseCard(QFrame):

@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QLineEdit, QPushButton, QFrame, QLabel, QSpacerItem, QSizePolicy, QScrollArea, QCheckBox, QApplication
 )
 from PySide6.QtCore import Qt, QDate, QTimer, QEvent, QMimeData, QPoint
-from PySide6.QtGui import QColor, QFont, QPalette, QDrag
+from PySide6.QtGui import QColor, QFont, QPalette, QDrag, QPixmap, QPainter
 
 import sys
 import os
@@ -77,6 +77,64 @@ class DevoirsWidget(QWidget):
 
         # Espacement avant la liste
         main_layout.addSpacing(20)
+
+        # Barre de tri
+        tri_layout = QHBoxLayout()
+        tri_layout.setSpacing(10)
+        tri_layout.setContentsMargins(0, 0, 0, 10)
+
+        tri_label = QLabel("Trier par :")
+        tri_label.setStyleSheet("font-size: 13px; font-weight: bold; color: #333;")
+        tri_layout.addWidget(tri_label)
+
+        # Bouton tri par date
+        self.btn_tri_date = QPushButton("Date")
+        self.btn_tri_date.setFixedSize(100, 35)
+        self.btn_tri_date.setCheckable(True)
+        self.btn_tri_date.clicked.connect(self.trier_par_date)
+        tri_layout.addWidget(self.btn_tri_date)
+
+        # Bouton tri par classe
+        self.btn_tri_classe = QPushButton("Classe")
+        self.btn_tri_classe.setFixedSize(100, 35)
+        self.btn_tri_classe.setCheckable(True)
+        self.btn_tri_classe.clicked.connect(self.trier_par_classe)
+        tri_layout.addWidget(self.btn_tri_classe)
+
+        # Bouton ordre manuel
+        self.btn_tri_manuel = QPushButton("Manuel")
+        self.btn_tri_manuel.setFixedSize(100, 35)
+        self.btn_tri_manuel.setCheckable(True)
+        self.btn_tri_manuel.setChecked(True)  # Activé par défaut
+        self.btn_tri_manuel.clicked.connect(self.trier_manuel)
+        tri_layout.addWidget(self.btn_tri_manuel)
+
+        # Style des boutons de tri
+        style_btn_tri = """
+            QPushButton {
+                background-color: white;
+                color: #333;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: normal;
+            }
+            QPushButton:hover {
+                background-color: #f0f0f0;
+                border-color: #999;
+            }
+            QPushButton:checked {
+                background-color: #4A90E2;
+                color: white;
+                border-color: #4A90E2;
+            }
+        """
+        self.btn_tri_date.setStyleSheet(style_btn_tri)
+        self.btn_tri_classe.setStyleSheet(style_btn_tri)
+        self.btn_tri_manuel.setStyleSheet(style_btn_tri)
+
+        tri_layout.addStretch()
+        main_layout.addLayout(tri_layout)
 
         # Zone de scroll pour la liste des devoirs
         scroll_area = QScrollArea()
@@ -184,9 +242,8 @@ class DevoirsWidget(QWidget):
         # Recharger l'affichage
         self.charger_devoirs_from_utils()
         
-        # Réinitialiser les champs
+        # Réinitialiser seulement le champ de contenu (garder la date et la classe)
         self.line_content.clear()
-        self.date_edit.setDate(QDate.currentDate())
 
     def supprimer_devoir(self, devoir):
         """Supprime un devoir de la liste et sauvegarde"""
@@ -194,6 +251,71 @@ class DevoirsWidget(QWidget):
             self.devoirs_list.remove(devoir)
             sauvegarder_devoirs(self.devoirs_list)
             self.charger_devoirs_from_utils()
+
+    def trier_par_date(self):
+        """Trie les devoirs par date (tri visuel uniquement, non sauvegardé)"""
+        # Désactiver les autres boutons
+        self.btn_tri_classe.setChecked(False)
+        self.btn_tri_manuel.setChecked(False)
+        
+        if not self.btn_tri_date.isChecked():
+            # Si on déclique, revenir au tri manuel
+            self.btn_tri_manuel.setChecked(True)
+            self.trier_manuel()
+            return
+        
+        # Trier par date
+        devoirs_tries = sorted(self.devoirs_list, key=lambda d: d.date)
+        
+        # Afficher sans sauvegarder
+        self.afficher_devoirs(devoirs_tries)
+
+    def trier_par_classe(self):
+        """Trie les devoirs par classe (tri visuel uniquement, non sauvegardé)"""
+        # Désactiver les autres boutons
+        self.btn_tri_date.setChecked(False)
+        self.btn_tri_manuel.setChecked(False)
+        
+        if not self.btn_tri_classe.isChecked():
+            # Si on déclique, revenir au tri manuel
+            self.btn_tri_manuel.setChecked(True)
+            self.trier_manuel()
+            return
+        
+        # Trier par nom de classe
+        devoirs_tries = sorted(self.devoirs_list, key=lambda d: d.classe_objet.nom)
+        
+        # Afficher sans sauvegarder
+        self.afficher_devoirs(devoirs_tries)
+
+    def trier_manuel(self):
+        """Revient à l'ordre manuel (celui du fichier JSON)"""
+        # Désactiver les autres boutons
+        self.btn_tri_date.setChecked(False)
+        self.btn_tri_classe.setChecked(False)
+        self.btn_tri_manuel.setChecked(True)
+        
+        # Recharger depuis le fichier pour avoir l'ordre original
+        self.charger_devoirs_from_utils()
+
+    def afficher_devoirs(self, devoirs):
+        """Affiche une liste de devoirs (sans sauvegarder)"""
+        # Vider la liste
+        for i in reversed(range(self.scroll_layout.count())):
+            item = self.scroll_layout.itemAt(i)
+            if item.widget():
+                item.widget().deleteLater()
+            elif item.spacerItem():
+                self.scroll_layout.removeItem(item)
+
+        # Ajouter chaque devoir comme une carte personnalisée
+        for devoir in devoirs:
+            card = DevoirCard(devoir, self)
+            self.scroll_layout.addWidget(card)
+
+        # Ajouter un espaceur à la fin
+        spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.scroll_layout.addItem(spacer)
 
 
 class DevoirCard(QFrame):
@@ -207,39 +329,50 @@ class DevoirCard(QFrame):
         self.init_ui()
 
     def init_ui(self):
-        # Style de la carte
-        self.setStyleSheet("""
-            QFrame {
-                background-color: white;
+        # Convertir la couleur de la classe en format CSS avec alpha (transparence)
+        color_map = {
+            "gris": "128, 128, 128",
+            "bleu": "0, 0, 255",
+            "vert": "0, 128, 0",
+            "rouge": "255, 0, 0",
+            "jaune": "255, 255, 0",
+            "orange": "255, 165, 0",
+            "violet": "128, 0, 128",
+            "rose": "255, 192, 203",
+            "noir": "0, 0, 0",
+            "blanc": "255, 255, 255",
+        }
+        
+        # Récupérer les valeurs RGB
+        couleur_classe = self.devoir.classe_objet.couleur
+        if couleur_classe.startswith('#'):
+            # Convertir hex en RGB
+            hex_color = couleur_classe.lstrip('#')
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+            rgb_values = f"{r}, {g}, {b}"
+        else:
+            rgb_values = color_map.get(couleur_classe.lower(), "128, 128, 128")
+        
+        # Style de la carte avec fond coloré (alpha = 0.15 pour une couleur douce)
+        self.setStyleSheet(f"""
+            QFrame {{
+                background-color: rgba({rgb_values}, 0.15);
                 border-radius: 10px;
-                border: 1px solid #ddd;
+                border: 1px solid rgba({rgb_values}, 0.3);
                 padding: 10px;
                 margin: 5px;
-            }
-            QLabel {
+            }}
+            QLabel {{
                 font-size: 14px;
                 color: #333;
                 padding: 5px;
-            }
-            QLabel.statut {
-                font-weight: bold;
-                padding: 5px 10px;
-                border-radius: 5px;
-                color: white;
-            }
-            QLabel.statut.fait {
-                background-color: #28a745;
-            }
-            QLabel.statut.en_cours {
-                background-color: #ffc107;
-                color: #333;
-            }
-            QLabel.statut.a_faire {
-                background-color: #dc3545;
-            }
+                background-color: transparent;
+            }}
         """)
 
-        # Layout principal (vertical) : ligne + ligne colorée en dessous
+        # Layout principal (vertical)
         layout = QVBoxLayout()
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -344,38 +477,6 @@ class DevoirCard(QFrame):
 
         layout.addLayout(top_layout)
 
-        # Ligne 2 : Ligne colorée en dessous (ex: pour indiquer la couleur de la classe)
-        self.line_color = QFrame()
-        self.line_color.setFixedHeight(5)  # hauteur de la ligne
-
-        # Récupérer la couleur de la classe
-        couleur_classe = self.devoir.classe_objet.couleur
-
-        # Convertir la couleur en format CSS
-        color_map = {
-            "gris": "#808080",
-            "bleu": "#0000FF",
-            "vert": "#008000",
-            "rouge": "#FF0000",
-            "jaune": "#FFFF00",
-            "orange": "#FFA500",
-            "violet": "#800080",
-            "rose": "#FFC0CB",
-            "noir": "#000000",
-            "blanc": "#FFFFFF",
-        }
-
-        # Si la couleur est déjà en format hex, on la garde
-        if couleur_classe.startswith('#'):
-            self.color_css = couleur_classe
-        else:
-            self.color_css = color_map.get(couleur_classe.lower(), "#808080")
-
-        # Appliquer la couleur
-        self.line_color.setStyleSheet(f"background-color: {self.color_css};")
-
-        layout.addWidget(self.line_color)
-
         # Appliquer le layout
         self.setLayout(layout)
 
@@ -416,9 +517,19 @@ class DevoirCard(QFrame):
         index = self.parent_widget.devoirs_list.index(self.devoir)
         mime_data.setText(str(index))
         drag.setMimeData(mime_data)
+        
+        # Créer une image de la carte pour le drag (pixmap)
+        pixmap = QPixmap(self.size())
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        painter.setOpacity(0.7)
+        self.render(painter, QPoint(0, 0))
+        painter.end()
+        drag.setPixmap(pixmap)
+        drag.setHotSpot(event.pos())
 
         # Effet visuel pendant le drag
-        drag.exec(Qt.MoveAction)
+        result = drag.exec(Qt.MoveAction)
         self.setCursor(Qt.OpenHandCursor)
 
     def mouseReleaseEvent(self, event):
@@ -431,6 +542,21 @@ class DevoirCard(QFrame):
         """Accepte le drag d'une autre carte"""
         if event.mimeData().hasText():
             event.acceptProposedAction()
+            # Indication visuelle : bordure bleue épaisse
+            self.setStyleSheet("""
+                QFrame {
+                    background-color: rgba(74, 144, 226, 0.2);
+                    border-radius: 10px;
+                    border: 3px solid #4A90E2;
+                    padding: 10px;
+                    margin: 5px;
+                }
+            """)
+
+    def dragLeaveEvent(self, event):
+        """Restaure le style quand le drag quitte la carte"""
+        # Récupérer les valeurs RGB de la couleur de classe
+        self.restaurer_style_normal()
 
     def dropEvent(self, event):
         """Gère le drop sur cette carte"""
@@ -439,6 +565,17 @@ class DevoirCard(QFrame):
             target_index = self.parent_widget.devoirs_list.index(self.devoir)
             
             if source_index != target_index:
+                # Effet visuel : flash vert pour confirmer
+                self.setStyleSheet("""
+                    QFrame {
+                        background-color: rgba(40, 167, 69, 0.3);
+                        border-radius: 10px;
+                        border: 2px solid #28a745;
+                        padding: 10px;
+                        margin: 5px;
+                    }
+                """)
+                
                 # Réorganiser la liste
                 devoir_deplace = self.parent_widget.devoirs_list.pop(source_index)
                 self.parent_widget.devoirs_list.insert(target_index, devoir_deplace)
@@ -446,8 +583,10 @@ class DevoirCard(QFrame):
                 # Sauvegarder
                 sauvegarder_devoirs(self.parent_widget.devoirs_list)
                 
-                # Recharger l'affichage
-                self.parent_widget.charger_devoirs_from_utils()
+                # Recharger l'affichage après un court délai
+                QTimer.singleShot(200, lambda: self.parent_widget.charger_devoirs_from_utils())
+            else:
+                self.restaurer_style_normal()
             
             event.acceptProposedAction()
 
@@ -524,6 +663,48 @@ class DevoirCard(QFrame):
         else:  # À faire
             self.label_statut.setStyleSheet("font-weight: bold; padding: 5px 10px; border-radius: 5px; background-color: #dc3545; color: white;")
 
+    def restaurer_style_normal(self):
+        """Restaure le style normal avec la couleur de la classe"""
+        # Récupérer les valeurs RGB
+        color_map = {
+            "gris": "128, 128, 128",
+            "bleu": "0, 0, 255",
+            "vert": "0, 128, 0",
+            "rouge": "255, 0, 0",
+            "jaune": "255, 255, 0",
+            "orange": "255, 165, 0",
+            "violet": "128, 0, 128",
+            "rose": "255, 192, 203",
+            "noir": "0, 0, 0",
+            "blanc": "255, 255, 255",
+        }
+        
+        couleur_classe = self.devoir.classe_objet.couleur
+        if couleur_classe.startswith('#'):
+            hex_color = couleur_classe.lstrip('#')
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+            rgb_values = f"{r}, {g}, {b}"
+        else:
+            rgb_values = color_map.get(couleur_classe.lower(), "128, 128, 128")
+        
+        self.setStyleSheet(f"""
+            QFrame {{
+                background-color: rgba({rgb_values}, 0.15);
+                border-radius: 10px;
+                border: 1px solid rgba({rgb_values}, 0.3);
+                padding: 10px;
+                margin: 5px;
+            }}
+            QLabel {{
+                font-size: 14px;
+                color: #333;
+                padding: 5px;
+                background-color: transparent;
+            }}
+        """)
+
     def eventFilter(self, obj, event):
         if obj == self:
             if event.type() == QEvent.MouseButtonPress:
@@ -533,71 +714,46 @@ class DevoirCard(QFrame):
                     if not isinstance(widget_under_mouse, QPushButton):
                         self.copier_contenu()
             elif event.type() == QEvent.Enter:
-                # Style au survol : bordure plus foncée
-                self.setStyleSheet("""
-                    QFrame {
-                        background-color: #f8f9fa;
+                # Style au survol : bordure plus visible
+                color_map = {
+                    "gris": "128, 128, 128",
+                    "bleu": "0, 0, 255",
+                    "vert": "0, 128, 0",
+                    "rouge": "255, 0, 0",
+                    "jaune": "255, 255, 0",
+                    "orange": "255, 165, 0",
+                    "violet": "128, 0, 128",
+                    "rose": "255, 192, 203",
+                    "noir": "0, 0, 0",
+                    "blanc": "255, 255, 255",
+                }
+                
+                couleur_classe = self.devoir.classe_objet.couleur
+                if couleur_classe.startswith('#'):
+                    hex_color = couleur_classe.lstrip('#')
+                    r = int(hex_color[0:2], 16)
+                    g = int(hex_color[2:4], 16)
+                    b = int(hex_color[4:6], 16)
+                    rgb_values = f"{r}, {g}, {b}"
+                else:
+                    rgb_values = color_map.get(couleur_classe.lower(), "128, 128, 128")
+                
+                self.setStyleSheet(f"""
+                    QFrame {{
+                        background-color: rgba({rgb_values}, 0.25);
                         border-radius: 10px;
-                        border: 1px solid #999;
+                        border: 2px solid rgba({rgb_values}, 0.5);
                         padding: 10px;
                         margin: 5px;
-                    }
-                    QLabel {
+                    }}
+                    QLabel {{
                         font-size: 14px;
                         color: #333;
                         padding: 5px;
-                    }
-                    QLabel.statut {
-                        font-weight: bold;
-                        padding: 5px 10px;
-                        border-radius: 5px;
-                        color: white;
-                    }
-                    QLabel.statut.fait {
-                        background-color: #28a745;
-                    }
-                    QLabel.statut.en_cours {
-                        background-color: #ffc107;
-                        color: #333;
-                    }
-                    QLabel.statut.a_faire {
-                        background-color: #dc3545;
-                    }
+                        background-color: transparent;
+                    }}
                 """)
-                # Réappliquer la couleur de la classe à la ligne
-                self.line_color.setStyleSheet(f"background-color: {self.color_css};")
             elif event.type() == QEvent.Leave:
                 # Style normal
-                self.setStyleSheet("""
-                    QFrame {
-                        background-color: white;
-                        border-radius: 10px;
-                        border: 1px solid #ddd;
-                        padding: 10px;
-                        margin: 5px;
-                    }
-                    QLabel {
-                        font-size: 14px;
-                        color: #333;
-                        padding: 5px;
-                    }
-                    QLabel.statut {
-                        font-weight: bold;
-                        padding: 5px 10px;
-                        border-radius: 5px;
-                        color: white;
-                    }
-                    QLabel.statut.fait {
-                        background-color: #28a745;
-                    }
-                    QLabel.statut.en_cours {
-                        background-color: #ffc107;
-                        color: #333;
-                    }
-                    QLabel.statut.a_faire {
-                        background-color: #dc3545;
-                    }
-                """)
-                # Réappliquer la couleur de la classe à la ligne
-                self.line_color.setStyleSheet(f"background-color: {self.color_css};")
+                self.restaurer_style_normal()
         return super().eventFilter(obj, event)

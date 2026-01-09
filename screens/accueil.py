@@ -117,7 +117,7 @@ class AccueilWindow(QMainWindow):
         
         # Barre supérieure avec bouton retour
         top_bar = QWidget()
-        top_bar.setStyleSheet("background-color: #f0f0f0;")
+        top_bar.setStyleSheet("background-color: ##fcfcfd;")
         top_bar.setFixedHeight(60)
         top_bar_layout = QHBoxLayout()
         top_bar_layout.setContentsMargins(10, 10, 10, 10)
@@ -173,7 +173,7 @@ class AccueilWindow(QMainWindow):
         if self.page_classes is None and gestion_classes:
             try:
                 if hasattr(gestion_classes, 'ClassesWidget'):
-                    content = gestion_classes.ClassesWidget()
+                    content = gestion_classes.ClassesWidget(main_window=self)
                     self.page_classes = self.create_page_with_back_button(
                         content, "Gestion des Classes"
                     )
