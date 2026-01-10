@@ -1,13 +1,29 @@
 # utils/gestion.py
 import json
 import os
+import sys
 from datetime import datetime
 from models.Classe import Classe
 from models.Devoir import Devoir
 
-# Chemin vers les fichiers JSON
-CLASSES_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'classes.json')
-DEVOIRS_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'devoirs.json')
+# Fonction pour obtenir le bon chemin, que ce soit en développement ou en .exe
+def get_data_path():
+    """Retourne le chemin vers le dossier data, en mode dev ou exe"""
+    if getattr(sys, 'frozen', False):
+        # Mode .exe : le dossier data doit être à côté du .exe
+        application_path = os.path.dirname(sys.executable)
+    else:
+        # Mode développement : chemin relatif classique
+        application_path = os.path.dirname(os.path.dirname(__file__))
+    
+    data_path = os.path.join(application_path, 'data')
+    os.makedirs(data_path, exist_ok=True)  # Créer le dossier s'il n'existe pas
+    return data_path
+
+# Utiliser la fonction pour définir les chemins
+DATA_DIR = get_data_path()
+CLASSES_FILE = os.path.join(DATA_DIR, 'classes.json')
+DEVOIRS_FILE = os.path.join(DATA_DIR, 'devoirs.json')
 
 def charger_classes():
     """Charge les classes depuis le fichier JSON et retourne une liste d'instances de Classe"""

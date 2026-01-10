@@ -117,7 +117,7 @@ class AccueilWindow(QMainWindow):
         
         # Barre supérieure avec bouton retour
         top_bar = QWidget()
-        top_bar.setStyleSheet("background-color: ##fcfcfd;")
+        top_bar.setStyleSheet("background-color: #fcfcfd;")
         top_bar.setFixedHeight(60)
         top_bar_layout = QHBoxLayout()
         top_bar_layout.setContentsMargins(10, 10, 10, 10)
