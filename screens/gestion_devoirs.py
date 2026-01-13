@@ -151,7 +151,7 @@ class DevoirsWidget(QWidget):
         # Conteneur pour la liste des devoirs
         self.scroll_container = QWidget()
         self.scroll_layout = QVBoxLayout()
-        self.scroll_layout.setSpacing(10)
+        self.scroll_layout.setSpacing(40)
         self.scroll_layout.setContentsMargins(0, 0, 0, 0)
         self.scroll_layout.setAlignment(Qt.AlignTop)  # Aligner en haut
         self.scroll_container.setLayout(self.scroll_layout)

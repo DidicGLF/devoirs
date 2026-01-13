@@ -78,9 +78,20 @@ class AccueilPage(QWidget):
         self.btn_parametres.setStyleSheet(button_style)
         layout.addWidget(self.btn_parametres, alignment=Qt.AlignCenter)
         
+        
+
+        # Lien clickable en bas
+        footer_label = QLabel()
+        footer_label.setText('<a href="https://cite-mendes-france.mon-ent-occitanie.fr">E.N.T. : Pierre Mendès-France</a>')
+        footer_label.setOpenExternalLinks(True)  # Ouvre le lien dans le navigateur par défaut
+        footer_label.setAlignment(Qt.AlignCenter)
+        footer_label.setStyleSheet("color: #4A90E2; text-decoration: underline;")
+        footer_label.setFont(QFont("Arial", 10))
+        layout.addWidget(footer_label)
+
         # Espacement
         layout.addStretch()
-        
+
         self.setLayout(layout)
 
 
