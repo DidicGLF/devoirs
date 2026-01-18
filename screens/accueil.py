@@ -3,6 +3,8 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QPushButton,
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
+from utils.config_manager import get_lien_ent
+
 # Imports des modules des écrans
 try:
     from screens import gestion_classes
@@ -78,21 +80,28 @@ class AccueilPage(QWidget):
         self.btn_parametres.setStyleSheet(button_style)
         layout.addWidget(self.btn_parametres, alignment=Qt.AlignCenter)
         
-        
-
-        # Lien clickable en bas
-        footer_label = QLabel()
-        footer_label.setText('<a href="https://cite-mendes-france.mon-ent-occitanie.fr">E.N.T. : Pierre Mendès-France</a>')
-        footer_label.setOpenExternalLinks(True)  # Ouvre le lien dans le navigateur par défaut
-        footer_label.setAlignment(Qt.AlignCenter)
-        footer_label.setStyleSheet("color: #4A90E2; text-decoration: underline;")
-        footer_label.setFont(QFont("Arial", 10))
-        layout.addWidget(footer_label)
-
         # Espacement
         layout.addStretch()
 
+        # Lien clickable en bas de page
+        self.footer_label = QLabel()
+        self.update_footer_link()  # Charger le lien depuis la config
+        self.footer_label.setOpenExternalLinks(True)
+        self.footer_label.setAlignment(Qt.AlignCenter)
+        self.footer_label.setStyleSheet("color: #4A90E2; text-decoration: underline;")
+        self.footer_label.setFont(QFont("Arial", 10))
+        layout.addWidget(self.footer_label)
+
+        
+
         self.setLayout(layout)
+
+    def update_footer_link(self):
+        """Met à jour le lien du footer depuis la configuration"""
+        lien = get_lien_ent()
+        url = lien.get("url", "")
+        texte = lien.get("texte", "Mon lien")
+        self.footer_label.setText(f'<a href="{url}">{texte}</a>')
 
 
 class AccueilWindow(QMainWindow):

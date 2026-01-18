@@ -1,7 +1,7 @@
 # screens/gestion_parametres.py
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, 
-    QFrame, QFileDialog, QMessageBox, QSpacerItem, QSizePolicy, QScrollArea
+    QFrame, QFileDialog, QMessageBox, QSpacerItem, QSizePolicy, QScrollArea, QApplication
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
@@ -16,6 +16,12 @@ from datetime import datetime
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from utils.gestion import charger_classes, charger_devoirs, sauvegarder_classes, sauvegarder_devoirs, CLASSES_FILE, DEVOIRS_FILE
+
+# Import du gestionnaire de configuration
+from utils.config_manager import get_lien_ent, set_lien_ent
+
+# Import du gestionnaire de thème
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
 
 class ParametresWidget(QWidget):
     """Écran de gestion des paramètres"""
@@ -59,13 +65,14 @@ class ParametresWidget(QWidget):
 
         # ==================== SECTION APPARENCE ====================
         section_apparence = self.creer_section("🎨 Apparence", [
-            ("Thème", "Choisir entre thème clair et sombre (prochainement)", None),
+            ("Thème", "Basculer entre thème clair et thème sombre (prochainement)", None),
             ("Taille de police", "Ajuster la taille du texte (prochainement)", None)
         ])
         scroll_layout.addWidget(section_apparence)
 
         # ==================== SECTION PRÉFÉRENCES ====================
         section_preferences = self.creer_section("⚙️ Préférences", [
+            ("Lien personnalisé", "Modifier le lien affiché sur la page d'accueil", self.modifier_lien_ent),
             ("Format de date", "Choisir le format d'affichage des dates (prochainement)", None)
         ])
         scroll_layout.addWidget(section_preferences)
@@ -138,10 +145,52 @@ class ParametresWidget(QWidget):
             element_layout.addLayout(text_layout, 1)
             
             # Bouton d'action
+            # Bouton d'action
             if action:
-                btn = QPushButton("Exécuter" if "Exporter" in nom or "Importer" in nom else "Réinitialiser")
-                btn.setFixedSize(120, 35)
-                if "Réinitialiser" in nom:
+                # Bouton pour "Lien personnalisé"
+                if "Lien" in nom:
+                    btn = QPushButton("Modifier")
+                    btn.setFixedSize(120, 35)
+                    btn.setStyleSheet("""
+                        QPushButton {
+                            background-color: #4A90E2;
+                            color: white;
+                            border-radius: 8px;
+                            font-size: 12px;
+                        }
+                        QPushButton:hover {
+                            background-color: #357ABD;
+                        }
+                        QPushButton:pressed {
+                            background-color: #2868A8;
+                        }
+                    """)
+                    btn.clicked.connect(action)
+                    element_layout.addWidget(btn)
+                # Bouton pour Export/Import
+                elif "Exporter" in nom or "Importer" in nom:
+                    btn = QPushButton("Exécuter")
+                    btn.setFixedSize(120, 35)
+                    btn.setStyleSheet("""
+                        QPushButton {
+                            background-color: #4A90E2;
+                            color: white;
+                            border-radius: 8px;
+                            font-size: 12px;
+                        }
+                        QPushButton:hover {
+                            background-color: #357ABD;
+                        }
+                        QPushButton:pressed {
+                            background-color: #2868A8;
+                        }
+                    """)
+                    btn.clicked.connect(action)
+                    element_layout.addWidget(btn)
+                # Bouton pour Réinitialiser
+                elif "Réinitialiser" in nom:
+                    btn = QPushButton("Réinitialiser")
+                    btn.setFixedSize(120, 35)
                     btn.setStyleSheet("""
                         QPushButton {
                             background-color: white;
@@ -157,23 +206,8 @@ class ParametresWidget(QWidget):
                             background-color: #ffcccc;
                         }
                     """)
-                else:
-                    btn.setStyleSheet("""
-                        QPushButton {
-                            background-color: #4A90E2;
-                            color: white;
-                            border-radius: 8px;
-                            font-size: 12px;
-                        }
-                        QPushButton:hover {
-                            background-color: #357ABD;
-                        }
-                        QPushButton:pressed {
-                            background-color: #2868A8;
-                        }
-                    """)
-                btn.clicked.connect(action)
-                element_layout.addWidget(btn)
+                    btn.clicked.connect(action)
+                    element_layout.addWidget(btn)
             else:
                 # Placeholder pour les fonctionnalités à venir
                 placeholder = QLabel("Bientôt")
@@ -221,7 +255,7 @@ class ParametresWidget(QWidget):
         section_frame.setLayout(section_layout)
         return section_frame
 
-    # ==================== IMPLÉMENTATION SECTION DONNÉES ====================
+    # ==================== IMPLÉMENTATION SECTION DONNÉES ====================    
     
     def exporter_donnees(self):
         """Exporte toutes les données (classes + devoirs) dans un fichier JSON"""
@@ -428,3 +462,90 @@ class ParametresWidget(QWidget):
                         widget.charger_devoirs_from_utils()
                         widget.charger_classes_from_utils()
                         break
+
+    def modifier_lien_ent(self):
+        """Modifie le lien personnalisé de la page d'accueil"""
+        from PySide6.QtWidgets import QDialog, QLineEdit
+        
+        # Charger le lien actuel
+        lien_actuel = get_lien_ent()
+        
+        # Créer une boîte de dialogue
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Modifier le lien personnalisé")
+        dialog.setFixedSize(500, 200)
+        
+        layout = QVBoxLayout()
+        layout.setSpacing(15)
+        layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Champ URL
+        url_label = QLabel("URL du lien :")
+        layout.addWidget(url_label)
+        
+        url_input = QLineEdit()
+        url_input.setText(lien_actuel.get("url", ""))
+        url_input.setPlaceholderText("https://exemple.com")
+        layout.addWidget(url_input)
+        
+        # Champ Texte
+        texte_label = QLabel("Texte affiché :")
+        layout.addWidget(texte_label)
+        
+        texte_input = QLineEdit()
+        texte_input.setText(lien_actuel.get("texte", ""))
+        texte_input.setPlaceholderText("Mon lien")
+        layout.addWidget(texte_input)
+        
+        # Boutons
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addStretch()
+        
+        btn_annuler = QPushButton("Annuler")
+        btn_annuler.setFixedSize(120, 35)
+        btn_annuler.clicked.connect(dialog.reject)
+        buttons_layout.addWidget(btn_annuler)
+        
+        btn_sauvegarder = QPushButton("Sauvegarder")
+        btn_sauvegarder.setFixedSize(120, 35)
+        btn_sauvegarder.setStyleSheet("""
+            QPushButton {
+                background-color: #4A90E2;
+                color: white;
+                border-radius: 8px;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #357ABD;
+            }
+        """)
+        btn_sauvegarder.clicked.connect(dialog.accept)
+        buttons_layout.addWidget(btn_sauvegarder)
+        
+        layout.addLayout(buttons_layout)
+        dialog.setLayout(layout)
+        
+        # Afficher le dialogue
+        if dialog.exec():
+            url = url_input.text().strip()
+            texte = texte_input.text().strip()
+            
+            if url and texte:
+                # Sauvegarder
+                set_lien_ent(url, texte)
+                
+                # Mettre à jour la page d'accueil si elle existe
+                if self.main_window and hasattr(self.main_window, 'page_accueil'):
+                    self.main_window.page_accueil.update_footer_link()
+                
+                QMessageBox.information(
+                    self,
+                    "Lien modifié",
+                    "Le lien personnalisé a été mis à jour avec succès !\nIl sera visible sur la page d'accueil."
+                )
+            else:
+                QMessageBox.warning(
+                    self,
+                    "Champs requis",
+                    "Veuillez remplir l'URL et le texte du lien."
+                )
