@@ -21,7 +21,7 @@ class ClassesWidget(QWidget):
         super().__init__(parent)
         self.main_window = main_window  # Référence à AccueilWindow
         self.classes_list = []  # Stockage des instances de Classe
-        self.couleur_selectionnee = "#808080" # Couleur par défaut (gris)
+        self.couleur_selectionnee = "#808080"  # Couleur par défaut (gris)
         self.init_ui()
 
     def init_ui(self):
@@ -251,41 +251,51 @@ class ClasseCard(QFrame):
         self.init_ui()
 
     def init_ui(self):
-        # Style de la carte
-        self.setStyleSheet("""
-            QFrame {
-                background-color: white;
+        # Convertir la couleur de la classe en format CSS avec alpha (transparence)
+        color_map = {
+            "gris": "128, 128, 128",
+            "bleu": "0, 0, 255",
+            "vert": "0, 128, 0",
+            "rouge": "255, 0, 0",
+            "jaune": "255, 255, 0",
+            "orange": "255, 165, 0",
+            "violet": "128, 0, 128",
+            "rose": "255, 192, 203",
+            "noir": "0, 0, 0",
+            "blanc": "255, 255, 255",
+        }
+        
+        # Récupérer les valeurs RGB
+        couleur_classe = self.classe.couleur
+        if couleur_classe.startswith('#'):
+            # Convertir hex en RGB
+            hex_color = couleur_classe.lstrip('#')
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+            rgb_values = f"{r}, {g}, {b}"
+        else:
+            rgb_values = color_map.get(couleur_classe.lower(), "128, 128, 128")
+        
+        # Stocker pour le eventFilter
+        self.rgb_values = rgb_values
+        
+        # Style de la carte avec fond coloré (alpha = 0.15 pour une couleur douce)
+        self.setStyleSheet(f"""
+            QFrame {{
+                background-color: rgba({rgb_values}, 0.15);
                 border-radius: 10px;
-                border: 1px solid #ddd;
+                border: 1px solid rgba({rgb_values}, 0.3);
                 padding: 10px;
                 margin: 5px;
-            }
-            QLabel {
+            }}
+            QLabel {{
                 font-size: 14px;
                 color: #333;
                 padding: 5px;
-            }
+                background-color: transparent;
+            }}
         """)
-
-        # Convertir la couleur de la classe en format CSS
-        color_map = {
-            "gris": "#808080",
-            "bleu": "#0000FF",
-            "vert": "#008000",
-            "rouge": "#FF0000",
-            "jaune": "#FFFF00",
-            "orange": "#FFA500",
-            "violet": "#800080",
-            "rose": "#FFC0CB",
-            "noir": "#000000",
-            "blanc": "#FFFFFF",
-        }
-        
-        # Si la couleur est déjà en format hex (#...), on la garde telle quelle
-        if self.classe.couleur.startswith('#'):
-            self.color_css = self.classe.couleur
-        else:
-            self.color_css = color_map.get(self.classe.couleur.lower(), self.classe.couleur)
 
         # Layout principal (vertical)
         layout = QVBoxLayout()
@@ -333,12 +343,6 @@ class ClasseCard(QFrame):
 
         layout.addLayout(top_layout)
 
-        # Ligne 2 : Ligne colorée en dessous (couleur de la classe)
-        self.line_color = QFrame()
-        self.line_color.setFixedHeight(5)
-        self.line_color.setStyleSheet(f"background-color: {self.color_css};")
-        layout.addWidget(self.line_color)
-
         # Appliquer le layout
         self.setLayout(layout)
 
@@ -354,37 +358,37 @@ class ClasseCard(QFrame):
     def eventFilter(self, obj, event):
         if obj == self:
             if event.type() == event.Type.Enter:
-                # Style au survol
-                self.setStyleSheet("""
-                    QFrame {
-                        background-color: #f8f9fa;
+                # Style au survol : couleur plus intense
+                self.setStyleSheet(f"""
+                    QFrame {{
+                        background-color: rgba({self.rgb_values}, 0.25);
                         border-radius: 10px;
-                        border: 1px solid #999;
+                        border: 2px solid rgba({self.rgb_values}, 0.5);
                         padding: 10px;
                         margin: 5px;
-                    }
-                    QLabel {
+                    }}
+                    QLabel {{
                         font-size: 14px;
                         color: #333;
                         padding: 5px;
-                    }
+                        background-color: transparent;
+                    }}
                 """)
-                self.line_color.setStyleSheet(f"background-color: {self.color_css};")
             elif event.type() == event.Type.Leave:
                 # Style normal
-                self.setStyleSheet("""
-                    QFrame {
-                        background-color: white;
+                self.setStyleSheet(f"""
+                    QFrame {{
+                        background-color: rgba({self.rgb_values}, 0.15);
                         border-radius: 10px;
-                        border: 1px solid #ddd;
+                        border: 1px solid rgba({self.rgb_values}, 0.3);
                         padding: 10px;
                         margin: 5px;
-                    }
-                    QLabel {
+                    }}
+                    QLabel {{
                         font-size: 14px;
                         color: #333;
                         padding: 5px;
-                    }
+                        background-color: transparent;
+                    }}
                 """)
-                self.line_color.setStyleSheet(f"background-color: {self.color_css};")
         return super().eventFilter(obj, event)
