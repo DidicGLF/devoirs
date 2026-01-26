@@ -112,7 +112,7 @@ class DevoirsWidget(QWidget):
         #tri_layout.addStretch()
         
         # Bouton Projection
-        self.btn_projection = QPushButton("📽️ Projection")
+        self.btn_projection = QPushButton("Projection")
         self.btn_projection.setFixedSize(120, 35)
         self.btn_projection.setStyleSheet("""
             QPushButton {

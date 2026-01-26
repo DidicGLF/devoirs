@@ -324,22 +324,48 @@ class PageProjection(QWidget):
 
         # Afficher par date
         for date_affichage, devoirs_date in devoirs_par_date.items():
+            # Groupe de date
+            groupe_widget = QFrame()
+            groupe_widget.setStyleSheet("""
+                QFrame {
+                    background-color: white;
+                    border: 2px solid #4A90E2;
+                    border-radius: 10px;
+                    padding: 15px;
+                    margin: 5px;
+                }
+            """)
+            
+            groupe_layout = QVBoxLayout()
+            groupe_layout.setSpacing(8)
+            groupe_layout.setContentsMargins(10, 10, 10, 10)
+            
             # En-tête de date
             date_header = QLabel(f"Pour le : {date_affichage}")
-            date_header.setFont(QFont("Arial", 18, QFont.Bold))
-            date_header.setStyleSheet("color: #4A90E2; padding: 10px 0;")
-            scroll_layout.addWidget(date_header)
+            date_header.setFont(QFont("Arial", 16, QFont.Bold))
+            date_header.setStyleSheet("color: #4A90E2; border: none; padding-bottom: 5px;")
+            groupe_layout.addWidget(date_header)
+            
+            # Ligne de séparation
+            separator_date = QFrame()
+            separator_date.setFrameShape(QFrame.HLine)
+            separator_date.setStyleSheet("background-color: #4A90E2; border: none;")
+            separator_date.setFixedHeight(1)
+            groupe_layout.addWidget(separator_date)
+            
+            # Espacement
+            groupe_layout.addSpacing(5)
 
             # Liste des devoirs pour cette date
             for devoir in devoirs_date:
                 contenu_label = QLabel(f"• {devoir.contenu}")
                 contenu_label.setWordWrap(True)
                 contenu_label.setFont(QFont("Arial", 14))
-                contenu_label.setStyleSheet("color: #2c3e50; padding-left: 20px; padding-bottom: 5px;")
-                scroll_layout.addWidget(contenu_label)
+                contenu_label.setStyleSheet("color: #2c3e50; border: none; padding: 3px 0px 3px 10px;")
+                groupe_layout.addWidget(contenu_label)
             
-            # Espacement entre les groupes de dates
-            scroll_layout.addSpacing(15)
+            groupe_widget.setLayout(groupe_layout)
+            scroll_layout.addWidget(groupe_widget)
 
         scroll_widget.setLayout(scroll_layout)
         scroll_area.setWidget(scroll_widget)
