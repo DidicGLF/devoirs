@@ -109,6 +109,32 @@ class DevoirsWidget(QWidget):
         self.btn_tri_manuel.clicked.connect(self.trier_manuel)
         tri_layout.addWidget(self.btn_tri_manuel)
 
+        #tri_layout.addStretch()
+        
+        # Bouton Projection
+        self.btn_projection = QPushButton("📽️ Projection")
+        self.btn_projection.setFixedSize(120, 35)
+        self.btn_projection.setStyleSheet("""
+            QPushButton {
+                background-color: #28a745;
+                color: white;
+                border: 2px solid #28a745;
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: normal;
+            }
+            QPushButton:hover {
+                background-color: #218838;
+                border-color: #218838;
+            }
+            QPushButton:checked {
+                background-color: #1e7e34;
+                border-color: #1e7e34;
+            }
+        """)
+        self.btn_projection.clicked.connect(self.ouvrir_projection)
+        tri_layout.addWidget(self.btn_projection)
+
         # Style des boutons de tri
         style_btn_tri = """
             QPushButton {
@@ -316,6 +342,25 @@ class DevoirsWidget(QWidget):
         # Ajouter un espaceur à la fin
         spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         self.scroll_layout.addItem(spacer)
+
+    def ouvrir_projection(self):
+        """Ouvre la page de projection"""
+        from screens.gestion_projection import ProjectionWidget
+        
+        if hasattr(self, 'parent') and self.parent():
+            # Trouver la fenêtre principale
+            main_window = self.parent()
+            while main_window.parent():
+                main_window = main_window.parent()
+            
+            # Créer la page de projection
+            page_projection = ProjectionWidget(main_window=main_window)
+            page_complete = main_window.create_page_with_back_button(
+                page_projection, 
+                "Projection"
+            )
+            main_window.stacked_widget.addWidget(page_complete)
+            main_window.stacked_widget.setCurrentWidget(page_complete)
 
 
 class DevoirCard(QFrame):

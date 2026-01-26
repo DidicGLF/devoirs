@@ -27,7 +27,6 @@ except Exception as e:
     print(f"Erreur d'import gestion_parametres: {e}")
     gestion_parametres = None
 
-
 class AccueilPage(QWidget):
     """Page d'accueil avec les boutons de navigation"""
     def __init__(self, parent=None):
@@ -79,7 +78,7 @@ class AccueilPage(QWidget):
         self.btn_parametres.setFixedSize(button_width, button_height)
         self.btn_parametres.setStyleSheet(button_style)
         layout.addWidget(self.btn_parametres, alignment=Qt.AlignCenter)
-        
+
         # Espacement
         layout.addStretch()
 
