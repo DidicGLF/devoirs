@@ -88,20 +88,27 @@ class AccueilPage(QWidget):
         self.update_footer_link()  # Charger le lien depuis la config
         self.footer_label.setOpenExternalLinks(True)
         self.footer_label.setAlignment(Qt.AlignCenter)
-        self.footer_label.setStyleSheet("color: #4A90E2; text-decoration: underline;")
         self.footer_label.setFont(QFont("Arial", 10))
         layout.addWidget(self.footer_label)
 
         
 
-        self.setLayout(layout)
+        self.setLayout(layout)    
 
     def update_footer_link(self):
         """Met à jour le lien du footer depuis la configuration"""
         lien = get_lien_ent()
-        url = lien.get("url", "")
-        texte = lien.get("texte", "Mon lien")
-        self.footer_label.setText(f'<a href="{url}">{texte}</a>')
+        url = lien.get("url", "").strip()
+        texte = lien.get("texte", "").strip()
+        
+        if url and texte:
+            # Lien configuré : afficher le lien cliquable en bleu
+            self.footer_label.setText(f'<a href="{url}">{texte}</a>')
+            self.footer_label.setStyleSheet("color: #4A90E2; text-decoration: underline;")
+        else:
+            # Lien non configuré : afficher un message informatif en gris
+            self.footer_label.setText("💡 Configurez votre lien personnalisé dans les Paramètres")
+            self.footer_label.setStyleSheet("color: #999; font-style: italic;")
 
 
 class AccueilWindow(QMainWindow):

@@ -1,0 +1,22 @@
+[
+  {
+    "nom": "5 eme A",
+    "effectif": 23,
+    "couleur": "#33d17a"
+  },
+  {
+    "nom": "4emeA",
+    "effectif": 12,
+    "couleur": "#9141ac"
+  },
+  {
+    "nom": "6emeA",
+    "effectif": 15,
+    "couleur": "#f9f06b"
+  },
+  {
+    "nom": "3emeB",
+    "effectif": 25,
+    "couleur": "#99c1f1"
+  }
+]

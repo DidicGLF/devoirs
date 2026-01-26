@@ -145,7 +145,6 @@ class ParametresWidget(QWidget):
             element_layout.addLayout(text_layout, 1)
             
             # Bouton d'action
-            # Bouton d'action
             if action:
                 # Bouton pour "Lien personnalisé"
                 if "Lien" in nom:
@@ -255,8 +254,8 @@ class ParametresWidget(QWidget):
         section_frame.setLayout(section_layout)
         return section_frame
 
-    # ==================== IMPLÉMENTATION SECTION DONNÉES ====================    
-    
+    # ==================== IMPLÉMENTATION SECTION DONNÉES ====================   
+        
     def exporter_donnees(self):
         """Exporte toutes les données (classes + devoirs) dans un fichier JSON"""
         # Ouvrir le dialogue de sauvegarde
@@ -425,10 +424,17 @@ class ParametresWidget(QWidget):
             with open(DEVOIRS_FILE, 'w', encoding='utf-8') as f:
                 json.dump([], f, ensure_ascii=False, indent=2)
             
+            # Réinitialiser le lien personnalisé
+            set_lien_ent("", "")
+            
+            # Mettre à jour la page d'accueil si elle existe
+            if self.main_window and hasattr(self.main_window, 'page_accueil'):
+                self.main_window.page_accueil.update_footer_link()
+            
             QMessageBox.information(
                 self,
                 "Réinitialisation réussie",
-                f"Toutes les données ont été supprimées.\n\nUne sauvegarde a été créée dans :\n{backup_dir}"
+                f"Toutes les données ont été supprimées (classes, devoirs et lien personnalisé).\n\nUne sauvegarde a été créée dans :\n{backup_dir}"
             )
             
             # Rafraîchir les pages si possible

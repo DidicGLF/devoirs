@@ -21,11 +21,11 @@ CONFIG_FILE = get_config_path()
 def charger_config():
     """Charge la configuration depuis le fichier JSON"""
     if not os.path.exists(CONFIG_FILE):
-        # Configuration par défaut
+        # Configuration par défaut (vide)
         return {
             "lien_ent": {
-                "url": "https://cite-mendes-france.mon-ent-occitanie.fr",
-                "texte": "Cité Mendès France - ENT"
+                "url": "",
+                "texte": ""
             }
         }
     
@@ -36,8 +36,8 @@ def charger_config():
         # En cas d'erreur, retourner la config par défaut
         return {
             "lien_ent": {
-                "url": "https://cite-mendes-france.mon-ent-occitanie.fr",
-                "texte": "Cité Mendès France - ENT"
+                "url": "",
+                "texte": ""
             }
         }
 
@@ -52,8 +52,8 @@ def get_lien_ent():
     """Retourne le lien ENT (url et texte)"""
     config = charger_config()
     return config.get("lien_ent", {
-        "url": "https://cite-mendes-france.mon-ent-occitanie.fr",
-        "texte": "Cité Mendès France - ENT"
+        "url": "",
+        "texte": ""
     })
 
 def set_lien_ent(url, texte):
