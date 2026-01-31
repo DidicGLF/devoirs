@@ -341,8 +341,8 @@ class PageProjection(QWidget):
             groupe_layout.setContentsMargins(10, 10, 10, 10)
             
             # En-tête de date
-            date_header = QLabel(f"Pour le : {date_affichage}")
-            date_header.setFont(QFont("Arial", 16, QFont.Bold))
+            date_header = QLabel(f"Séance du {date_affichage}")
+            date_header.setFont(QFont("Arial", 32, QFont.Bold))
             date_header.setStyleSheet("color: #4A90E2; border: none; padding-bottom: 5px;")
             groupe_layout.addWidget(date_header)
             
@@ -360,7 +360,7 @@ class PageProjection(QWidget):
             for devoir in devoirs_date:
                 contenu_label = QLabel(f"• {devoir.contenu}")
                 contenu_label.setWordWrap(True)
-                contenu_label.setFont(QFont("Arial", 14))
+                contenu_label.setFont(QFont("Arial", 28))
                 contenu_label.setStyleSheet("color: #2c3e50; border: none; padding: 3px 0px 3px 10px;")
                 groupe_layout.addWidget(contenu_label)
             
