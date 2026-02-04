@@ -1,7 +1,7 @@
 from datetime import datetime
 
 class Devoir:
-    def __init__(self, contenu, classe_objet, date=None, statut="à faire"):
+    def __init__(self, contenu, classe_objet, date=None, statut="Pas fait"):
         self.contenu = contenu
         self.classe_objet = classe_objet  # maintenant un objet Classe
         self.date = date if date else datetime.now().strftime("%Y-%m-%d")

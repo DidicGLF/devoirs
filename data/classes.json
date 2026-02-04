@@ -18,5 +18,10 @@
     "nom": "3°A",
     "effectif": 26,
     "couleur": "#c061cb"
+  },
+  {
+    "nom": "PAUSE",
+    "effectif": 0,
+    "couleur": "#ffffff"
   }
 ]
